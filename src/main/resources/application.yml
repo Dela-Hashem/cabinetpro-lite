@@ -1,0 +1,11 @@
+app:
+  db:
+    url: jdbc:postgresql://localhost:5432/cabinetpro
+    username: cabinetuser
+    password: cabinetpass
+server:
+  port: 8080
+logging:
+  level:
+    root: INFO
+    com.cabinetpro.lite: DEBUG
