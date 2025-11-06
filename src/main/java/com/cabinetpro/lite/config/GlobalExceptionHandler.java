@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -105,20 +106,38 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(body);
     }
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseDto> handleBadJson(
+            org.springframework.http.converter.HttpMessageNotReadableException ex,
+            jakarta.servlet.http.HttpServletRequest req) {
 
-    // 500 - هر چیز غیرمنتظره
+        ErrorResponseDto body = ErrorResponseDto.builder()
+                .timestamp(java.time.Instant.now())
+                .status(org.springframework.http.HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("Malformed JSON body")
+                .path(req.getRequestURI())
+                .details(java.util.List.of(Optional.ofNullable(ex.getMostSpecificCause())
+                        .map(Throwable::getMessage)
+                        .orElse(ex.getMessage())))
+                .build();
+        return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(body);
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleOther(
             Exception ex, HttpServletRequest req) {
 
+        ex.printStackTrace(); // موقت: استک‌تریس کامل در کنسول
+
         ErrorResponseDto body = ErrorResponseDto.builder()
-                .timestamp(Instant.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .timestamp(java.time.Instant.now())
+                .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message("Unexpected error")
+                .message(ex.getClass().getName() + ": " + String.valueOf(ex.getMessage()))
                 .path(req.getRequestURI())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
+
 }

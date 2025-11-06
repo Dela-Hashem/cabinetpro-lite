@@ -1,13 +1,17 @@
 package com.cabinetpro.lite.dao.jdbc;
 
-import com.cabinetpro.lite.config.DatabaseConnectionManager;
+//import com.cabinetpro.lite.config.DatabaseConnectionManager;
+
 import com.cabinetpro.lite.dao.CustomerDao;
 import com.cabinetpro.lite.model.Customer;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +27,7 @@ public class CustomerDaoJdbc implements CustomerDao {
     public CustomerDaoJdbc(DataSource dataSource) {
         this.dataSource = dataSource;
     }
-    
+
 //    private final DatabaseConnectionManager cm;
 //
 //    // constructor injection برای تست‌پذیری و حذف وابستگی پنهان
@@ -34,7 +38,8 @@ public class CustomerDaoJdbc implements CustomerDao {
     @Override
     public Long create(Customer c) throws SQLException {
         String sql = "INSERT INTO customers (full_name, phone, email) VALUES (?, ?, ?) RETURNING id";
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, c.getFullName());
@@ -55,7 +60,8 @@ public class CustomerDaoJdbc implements CustomerDao {
         String sql = "SELECT id, full_name, phone, email FROM customers ORDER BY id DESC";
         List<Customer> result = new ArrayList<>();
 
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
@@ -72,10 +78,12 @@ public class CustomerDaoJdbc implements CustomerDao {
 
         return result;
     }
+
     @Override
     public Optional<Customer> findById(Long id) throws SQLException {
         String sql = "SELECT id, full_name, phone, email FROM customers WHERE id = ?";
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -95,7 +103,8 @@ public class CustomerDaoJdbc implements CustomerDao {
     @Override
     public boolean deleteById(Long id) throws SQLException {
         String sql = "DELETE FROM customers WHERE id = ?";
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             int affected = ps.executeUpdate();
@@ -106,7 +115,8 @@ public class CustomerDaoJdbc implements CustomerDao {
     @Override
     public boolean update(Customer c) throws SQLException {
         String sql = "UPDATE customers SET full_name = ?, phone = ?, email = ? WHERE id = ?";
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, c.getFullName());
@@ -118,13 +128,15 @@ public class CustomerDaoJdbc implements CustomerDao {
             return affected > 0;
         }
     }
+
     @Override
     public List<Customer> searchByName(String q) throws SQLException {
         String sql = "SELECT id, full_name, phone, email FROM customers " +
                 "WHERE full_name ILIKE ? ORDER BY id DESC";
         List<Customer> result = new ArrayList<>();
 
-        try (Connection conn = DataSourceUtils.getConnection(dataSource);//cm.getConnection();
+        Connection conn = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, "%" + q + "%"); // پارامتر امن؛ concat سمت جاوا
@@ -141,6 +153,14 @@ public class CustomerDaoJdbc implements CustomerDao {
         }
         return result;
     }
-    @Override public long count() { return 0; }
-    @Override public Optional<Customer> findByEmail(String email) { return Optional.empty(); }
+
+    @Override
+    public long count() {
+        return 0;
+    }
+
+    @Override
+    public Optional<Customer> findByEmail(String email) {
+        return Optional.empty();
+    }
 }

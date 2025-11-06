@@ -1,6 +1,7 @@
 package com.cabinetpro.lite.controller;
 
 import com.cabinetpro.lite.dao.CustomerDao;
+import com.cabinetpro.lite.dto.CreateWithProjectRequestDto;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
 import com.cabinetpro.lite.dto.CustomerUpdateRequestDto;
 import com.cabinetpro.lite.model.Customer;
@@ -34,9 +35,14 @@ public class CustomerController {
 //        this.customerDao = customerDao;
 //    }
 
+
     @PostMapping("/with-project")
-    public ResponseEntity<Long> createWithProject(@Valid @RequestBody CreateWithProjectRequest body) throws SQLException {
-        Long customerId = customerService.createCustomerWithFirstProject(body.customer, body.project);
+    public ResponseEntity<Long> createWithProject(
+            @Valid @RequestBody CreateWithProjectRequestDto body) throws SQLException {
+        Long customerId = customerService.createCustomerWithFirstProject(
+                body.getCustomer(),
+                body.getProject()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(customerId);
     }
 

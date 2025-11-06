@@ -3,6 +3,7 @@ package com.cabinetpro.lite.service;
 import com.cabinetpro.lite.dao.CustomerDao;
 import com.cabinetpro.lite.dao.ProjectDao;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
+import com.cabinetpro.lite.dto.ProjectCreateForCustomerDto;
 import com.cabinetpro.lite.dto.ProjectCreateRequestDto;
 import com.cabinetpro.lite.model.Customer;
 import com.cabinetpro.lite.model.Project;
@@ -33,16 +34,13 @@ public class CustomerService {
      */
     @Transactional
     public Long createCustomerWithFirstProject(CustomerCreateRequestDto custReq,
-                                               ProjectCreateRequestDto projReq) throws SQLException {
+                                               ProjectCreateForCustomerDto projReq) throws SQLException {
         Long customerId = customerDao.create(new Customer(
                 null, custReq.getFullName(), custReq.getPhone(), custReq.getEmail()
         ));
-
-        // customerId ورودی پروژه را override می‌کنیم تا از تقلب ورودی جلوگیری شود
         projectDao.create(new Project(
                 null, customerId, projReq.getTitle(), projReq.getAddress(), null
         ));
-
         return customerId;
     }
 }

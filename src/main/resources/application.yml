@@ -1,12 +1,15 @@
-app:
+spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/cabinetpro
     username: cabinetuser
     password: cabinetpass
     driver-class-name: org.postgresql.Driver
+
 server:
   port: 8080
+
 logging:
   level:
-    root: INFO
-    com.cabinetpro.lite: DEBUG
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc: DEBUG
+

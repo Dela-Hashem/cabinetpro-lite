@@ -1,12 +1,17 @@
 package com.cabinetpro.lite.dao.jdbc;
 
-import com.cabinetpro.lite.config.DatabaseConnectionManager;
+//import com.cabinetpro.lite.config.DatabaseConnectionManager;
+
 import com.cabinetpro.lite.dao.ProjectDao;
 import com.cabinetpro.lite.model.Project;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.time.ZoneId;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,16 +19,22 @@ import java.util.Optional;
 @Repository
 public class ProjectDaoJdbc implements ProjectDao {
 
-    private final DatabaseConnectionManager cm;
+    //    private final DatabaseConnectionManager cm;
+//
+//    public ProjectDaoJdbc(DatabaseConnectionManager cm) {
+//        this.cm = cm;
+//    }
+    private final DataSource dataSource;
 
-    public ProjectDaoJdbc(DatabaseConnectionManager cm) {
-        this.cm = cm;
+    public ProjectDaoJdbc(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public Long create(Project p) throws SQLException {
         String sql = "INSERT INTO projects (customer_id, title, address) VALUES (?,?,?) RETURNING id";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setLong(1, p.getCustomerId());
@@ -41,7 +52,8 @@ public class ProjectDaoJdbc implements ProjectDao {
         String sql = "SELECT id, customer_id, title, address, created_at " +
                 "FROM projects WHERE customer_id = ? ORDER BY id DESC";
         List<Project> out = new ArrayList<>();
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, customerId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -55,7 +67,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     public Optional<Project> findLatestByCustomer(Long customerId) throws SQLException {
         String sql = "SELECT id, customer_id, title, address, created_at " +
                 "FROM projects WHERE customer_id = ? ORDER BY created_at DESC, id DESC LIMIT 1";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, customerId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -69,7 +82,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     public List<Project> findAll() throws SQLException {
         String sql = "SELECT id, customer_id, title, address, created_at FROM projects ORDER BY id DESC";
         List<Project> out = new ArrayList<>();
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) out.add(map(rs));
@@ -80,7 +94,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     @Override
     public Optional<Project> findById(Long id) throws SQLException {
         String sql = "SELECT id, customer_id, title, address, created_at FROM projects WHERE id = ?";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -93,7 +108,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     @Override
     public boolean update(Project p) throws SQLException {
         String sql = "UPDATE projects SET customer_id = ?, title = ?, address = ? WHERE id = ?";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, p.getCustomerId());
             ps.setString(2, p.getTitle());
@@ -106,7 +122,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     @Override
     public boolean deleteById(Long id) throws SQLException {
         String sql = "DELETE FROM projects WHERE id = ?";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -116,7 +133,8 @@ public class ProjectDaoJdbc implements ProjectDao {
     @Override
     public long count() throws SQLException {
         String sql = "SELECT COUNT(*) FROM projects";
-        try (Connection c = cm.getConnection();
+        Connection c = DataSourceUtils.getConnection(dataSource);
+        try (//cm.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             rs.next();
