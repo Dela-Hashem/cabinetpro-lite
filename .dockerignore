@@ -1,0 +1,7 @@
+target/
+.git
+.idea
+.mvn/
+README.md
+postman/
+db/init.sql
