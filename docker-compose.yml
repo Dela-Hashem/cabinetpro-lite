@@ -1,7 +1,6 @@
-version: '3.8'
 services:
-  postgres:
-    image: postgres:15
+  db:
+    image: postgres:16-alpine
     container_name: cabinetpro_db
     environment:
       POSTGRES_DB: cabinetpro
@@ -12,5 +11,28 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/00_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cabinetuser -d cabinetpro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cabinetpro
+      SPRING_DATASOURCE_USERNAME: cabinetuser
+      SPRING_DATASOURCE_PASSWORD: cabinetpass
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
 volumes:
   db_data:

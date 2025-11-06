@@ -63,8 +63,52 @@ docker run --name cabinetpro_db   -e POSTGRES_USER=cabinetuser   -e POSTGRES_PAS
 mvn clean spring-boot:run
 ```
 
-Then open your browser:  
+Then open your browser:
 👉 **http://localhost:8080**
+
+---
+
+## 🐳 Run with Docker
+
+### Prerequisites
+- **Docker** with Compose Plugin (v2+)
+- Ability to build container images locally
+
+### Build & Run
+```bash
+mvn clean package -DskipTests
+docker compose up --build
+```
+
+Once the stack is healthy, the API is reachable at **http://localhost:8080**.
+
+### Quick Smoke Tests
+```bash
+# 1) Check the database connection health
+curl http://localhost:8080/api/db/pool-ping
+
+# 2) Create a customer (adjust payload as needed)
+curl -X POST http://localhost:8080/api/customers \
+  -H 'Content-Type: application/json' \
+  -d '{"fullName":"Maryam A.","phone":"0400555123","email":"maryam@example.com"}'
+
+# 3) List customers
+curl http://localhost:8080/api/customers
+```
+
+### Key Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/db/pool-ping` | Health check for the datasource connection pool |
+| POST | `/api/customers` | Create a customer |
+| GET | `/api/customers` | List all customers |
+| GET | `/api/customers/{id}` | Fetch a single customer by id |
+| PUT | `/api/customers/{id}` | Update a customer |
+| DELETE | `/api/customers/{id}` | Delete a customer |
+| GET | `/api/customers/search?q=` | Search customers by name |
+| POST | `/api/customers/with-project` | Create a customer together with a first project |
+| POST | `/api/projects` | Create a project |
+| GET | `/api/projects/by-customer/{id}` | List projects for a customer |
 
 ---
 
