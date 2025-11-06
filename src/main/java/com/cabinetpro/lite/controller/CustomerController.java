@@ -4,6 +4,7 @@ import com.cabinetpro.lite.dao.CustomerDao;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
 import com.cabinetpro.lite.dto.CustomerUpdateRequestDto;
 import com.cabinetpro.lite.model.Customer;
+import com.cabinetpro.lite.service.CustomerService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -20,12 +21,30 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerDao customerDao;
+    private final CustomerService customerService; // اضافه شد
 
-    // نکته: به اینترفیس تزریق می‌کنیم، نه ایمپلمنتیشن. تست و تعویض آسان‌تر می‌شود.
-    public CustomerController(CustomerDao customerDao) {
+    public CustomerController(CustomerDao customerDao, CustomerService customerService) {
         this.customerDao = customerDao;
+        this.customerService = customerService;
     }
 
+
+//    // نکته: به اینترفیس تزریق می‌کنیم، نه ایمپلمنتیشن. تست و تعویض آسان‌تر می‌شود.
+//    public CustomerController(CustomerDao customerDao) {
+//        this.customerDao = customerDao;
+//    }
+
+    @PostMapping("/with-project")
+    public ResponseEntity<Long> createWithProject(@Valid @RequestBody CreateWithProjectRequest body) throws SQLException {
+        Long customerId = customerService.createCustomerWithFirstProject(body.customer, body.project);
+        return ResponseEntity.status(HttpStatus.CREATED).body(customerId);
+    }
+
+    // DTO ترکیبی فقط برای این endpoint
+    public static class CreateWithProjectRequest {
+        @Valid public com.cabinetpro.lite.dto.CustomerCreateRequestDto customer;
+        @Valid public com.cabinetpro.lite.dto.ProjectCreateRequestDto project;
+    }
     /**
      * ایجاد مشتری جدید
      * @param req بدنه JSON با ولیدیشن

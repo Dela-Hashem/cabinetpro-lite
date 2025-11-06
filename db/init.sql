@@ -12,3 +12,7 @@ CREATE TABLE IF NOT EXISTS projects (
   address TEXT,
   created_at TIMESTAMP DEFAULT now()
 );
+
+-- ایندکس برای جستجوهای رایج
+CREATE INDEX IF NOT EXISTS idx_projects_customer_id ON projects(customer_id);
+CREATE INDEX IF NOT EXISTS idx_projects_title ON projects(title);

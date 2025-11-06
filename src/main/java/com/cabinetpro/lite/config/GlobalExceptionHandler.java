@@ -66,16 +66,44 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleSql(
             SQLException ex, HttpServletRequest req) {
 
+        String state = ex.getSQLState();  // کد استاندارد Postgres/SQL
+        HttpStatus status;
+        String message;
+
+        // نگاشت مهم‌ترین خطاهای پایگاه‌داده به HTTP
+        switch (state) {
+            case "23503" -> { // foreign_key_violation
+                status = HttpStatus.BAD_REQUEST;
+                message = "Invalid reference: related record not found (e.g., customerId).";
+            }
+            case "23505" -> { // unique_violation
+                status = HttpStatus.CONFLICT;
+                message = "Duplicate value violates a unique constraint.";
+            }
+            case "23502" -> { // not_null_violation
+                status = HttpStatus.BAD_REQUEST;
+                message = "Required field is null.";
+            }
+            case "22P02" -> { // invalid_text_representation (e.g., UUID parsing)
+                status = HttpStatus.BAD_REQUEST;
+                message = "Invalid value format.";
+            }
+            default -> {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                message = "Database error";
+            }
+        }
+
         ErrorResponseDto body = ErrorResponseDto.builder()
-                .timestamp(Instant.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
-                .message("Database error")
+                .timestamp(java.time.Instant.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
                 .path(req.getRequestURI())
-                .details(List.of(ex.getSQLState() + " / " + ex.getErrorCode()))
+                .details(java.util.List.of(state + " / " + ex.getErrorCode()))
                 .build();
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        return ResponseEntity.status(status).body(body);
     }
 
     // 500 - هر چیز غیرمنتظره
