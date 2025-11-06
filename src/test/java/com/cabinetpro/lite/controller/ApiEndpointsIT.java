@@ -1,9 +1,14 @@
 package com.cabinetpro.lite.controller;
 
+import com.cabinetpro.lite.model.Customer;
+import com.cabinetpro.lite.service.CustomerService;
+import com.cabinetpro.lite.service.ProjectService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
@@ -19,6 +24,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.util.List;
+
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.*;
@@ -112,5 +120,24 @@ class ApiEndpointsIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"customer\": /*oops*/ }"))
                 .andExpect(status().isBadRequest()); // با هندلری که قبلاً دادی
+    }
+
+
+
+}
+@WebMvcTest(controllers = {CustomerController.class, ProjectController.class})
+class CustomerControllerWebTest {
+    @Autowired MockMvc mvc;
+    @MockBean
+    CustomerService customerService;
+    @MockBean
+    ProjectService projectService;
+
+    @Test
+    void search_returns200() throws Exception {
+        when(customerService.searchByName("mary")).thenReturn(List.of(new Customer(1L,"Mary",null,null)));
+        mvc.perform(get("/api/customers/search").param("q","mary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].fullName", is("Mary")));
     }
 }
