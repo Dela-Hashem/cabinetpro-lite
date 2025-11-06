@@ -95,9 +95,44 @@ public class CustomerDaoJdbc implements CustomerDao {
         }
     }
 
-    // متدهای باقی‌مانده هنوز پیاده‌سازی نمی‌شن
-    @Override public boolean update(Customer c) { return false; }
+    @Override
+    public boolean update(Customer c) throws SQLException {
+        String sql = "UPDATE customers SET full_name = ?, phone = ?, email = ? WHERE id = ?";
+        try (Connection conn = cm.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, c.getFullName());
+            ps.setString(2, c.getPhone());
+            ps.setString(3, c.getEmail());
+            ps.setLong(4, c.getId());
+
+            int affected = ps.executeUpdate();
+            return affected > 0;
+        }
+    }
+    @Override
+    public List<Customer> searchByName(String q) throws SQLException {
+        String sql = "SELECT id, full_name, phone, email FROM customers " +
+                "WHERE full_name ILIKE ? ORDER BY id DESC";
+        List<Customer> result = new ArrayList<>();
+
+        try (Connection conn = cm.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + q + "%"); // پارامتر امن؛ concat سمت جاوا
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new Customer(
+                            rs.getLong("id"),
+                            rs.getString("full_name"),
+                            rs.getString("phone"),
+                            rs.getString("email")
+                    ));
+                }
+            }
+        }
+        return result;
+    }
     @Override public long count() { return 0; }
     @Override public Optional<Customer> findByEmail(String email) { return Optional.empty(); }
-    @Override public List<Customer> searchByName(String q) { return List.of(); }
 }

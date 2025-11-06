@@ -2,8 +2,10 @@ package com.cabinetpro.lite.controller;
 
 import com.cabinetpro.lite.dao.CustomerDao;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
+import com.cabinetpro.lite.dto.CustomerUpdateRequestDto;
 import com.cabinetpro.lite.model.Customer;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -57,5 +59,18 @@ public class CustomerController {
         return ok ? ResponseEntity.noContent().build()         // 204
                 : ResponseEntity.notFound().build();         // 404 اگر چیزی حذف نشد
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> update(@PathVariable Long id,
+                                       @Valid @RequestBody CustomerUpdateRequestDto req) throws SQLException {
+        Customer c = new Customer(id, req.getFullName(), req.getPhone(), req.getEmail());
+        boolean ok = customerDao.update(c);
+        return ok ? ResponseEntity.noContent().build()  // 204
+                : ResponseEntity.notFound().build();  // 404
+    }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Customer>> searchByName(
+            @RequestParam @NotBlank(message = "q is required") String q) throws SQLException {
+        return ResponseEntity.ok(customerDao.searchByName(q.trim()));
+    }
 }
