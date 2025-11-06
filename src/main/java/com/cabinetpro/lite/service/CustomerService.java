@@ -1,46 +1,22 @@
+// service/CustomerService.java
 package com.cabinetpro.lite.service;
 
-import com.cabinetpro.lite.dao.CustomerDao;
-import com.cabinetpro.lite.dao.ProjectDao;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
+import com.cabinetpro.lite.dto.CustomerUpdateRequestDto;
 import com.cabinetpro.lite.dto.ProjectCreateForCustomerDto;
-import com.cabinetpro.lite.dto.ProjectCreateRequestDto;
 import com.cabinetpro.lite.model.Customer;
-import com.cabinetpro.lite.model.Project;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 
-@Service
-public class CustomerService {
+public interface CustomerService {
+    Long create(CustomerCreateRequestDto req) throws SQLException;
+    boolean update(Long id, CustomerUpdateRequestDto req) throws SQLException;
+    boolean delete(Long id) throws SQLException;
+    Optional<Customer> findById(Long id) throws SQLException;
+    List<Customer> findAll() throws SQLException;
+    List<Customer> searchByName(String name) throws SQLException;
+    Long createCustomerWithFirstProject(CustomerCreateRequestDto customer, ProjectCreateForCustomerDto project) throws SQLException;
 
-    private final CustomerDao customerDao;
-    private final ProjectDao projectDao;
-
-    public CustomerService(CustomerDao customerDao, ProjectDao projectDao) {
-        this.customerDao = customerDao;
-        this.projectDao = projectDao;
-    }
-
-    /** ایجاد ساده‌ی مشتری (بدون تراکنش چندمرحله‌ای) */
-    public Long createCustomer(CustomerCreateRequestDto req) throws SQLException {
-        return customerDao.create(new Customer(null, req.getFullName(), req.getPhone(), req.getEmail()));
-    }
-
-    /**
-     * ایجاد «مشتری + اولین پروژه» در یک تراکنش اتمیک.
-     * اگر هرکدام fail شود، کل عملیات rollback می‌شود.
-     */
-    @Transactional
-    public Long createCustomerWithFirstProject(CustomerCreateRequestDto custReq,
-                                               ProjectCreateForCustomerDto projReq) throws SQLException {
-        Long customerId = customerDao.create(new Customer(
-                null, custReq.getFullName(), custReq.getPhone(), custReq.getEmail()
-        ));
-        projectDao.create(new Project(
-                null, customerId, projReq.getTitle(), projReq.getAddress(), null
-        ));
-        return customerId;
-    }
 }

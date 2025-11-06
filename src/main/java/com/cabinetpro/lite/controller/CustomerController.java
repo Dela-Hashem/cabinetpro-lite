@@ -1,6 +1,5 @@
 package com.cabinetpro.lite.controller;
 
-import com.cabinetpro.lite.dao.CustomerDao;
 import com.cabinetpro.lite.dto.CreateWithProjectRequestDto;
 import com.cabinetpro.lite.dto.CustomerCreateRequestDto;
 import com.cabinetpro.lite.dto.CustomerUpdateRequestDto;
@@ -21,30 +20,17 @@ import java.util.List;
 @Validated
 public class CustomerController {
 
-    private final CustomerDao customerDao;
     private final CustomerService customerService; // اضافه شد
 
-    public CustomerController(CustomerDao customerDao, CustomerService customerService) {
-        this.customerDao = customerDao;
+    public CustomerController( CustomerService customerService) {
         this.customerService = customerService;
     }
 
 
 //    // نکته: به اینترفیس تزریق می‌کنیم، نه ایمپلمنتیشن. تست و تعویض آسان‌تر می‌شود.
-//    public CustomerController(CustomerDao customerDao) {
-//        this.customerDao = customerDao;
+//    public CustomerController(customerService customerService) {
+//        this.customerService = customerService;
 //    }
-
-
-    @PostMapping("/with-project")
-    public ResponseEntity<Long> createWithProject(
-            @Valid @RequestBody CreateWithProjectRequestDto body) throws SQLException {
-        Long customerId = customerService.createCustomerWithFirstProject(
-                body.getCustomer(),
-                body.getProject()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(customerId);
-    }
 
     // DTO ترکیبی فقط برای این endpoint
     public static class CreateWithProjectRequest {
@@ -59,7 +45,7 @@ public class CustomerController {
     @PostMapping
     public ResponseEntity<Long> create(@Valid @RequestBody CustomerCreateRequestDto req) throws SQLException {
         Customer c = new Customer(null, req.getFullName(), req.getPhone(), req.getEmail());
-        Long id = customerDao.create(c);
+        Long id = customerService.create(req);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
     }
 
@@ -68,19 +54,19 @@ public class CustomerController {
      */
     @GetMapping
     public ResponseEntity<List<Customer>> findAll() throws SQLException {
-        return ResponseEntity.ok(customerDao.findAll());
+        return ResponseEntity.ok(customerService.findAll());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Customer> findById(@PathVariable Long id) throws SQLException {
-        return customerDao.findById(id)
+        return customerService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build()); // 404
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) throws SQLException {
-        boolean ok = customerDao.deleteById(id);
+        boolean ok = customerService.delete(id);
         return ok ? ResponseEntity.noContent().build()         // 204
                 : ResponseEntity.notFound().build();         // 404 اگر چیزی حذف نشد
     }
@@ -88,7 +74,7 @@ public class CustomerController {
     public ResponseEntity<Void> update(@PathVariable Long id,
                                        @Valid @RequestBody CustomerUpdateRequestDto req) throws SQLException {
         Customer c = new Customer(id, req.getFullName(), req.getPhone(), req.getEmail());
-        boolean ok = customerDao.update(c);
+        boolean ok = customerService.update(id,req);
         return ok ? ResponseEntity.noContent().build()  // 204
                 : ResponseEntity.notFound().build();  // 404
     }
@@ -96,6 +82,6 @@ public class CustomerController {
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchByName(
             @RequestParam @NotBlank(message = "q is required") String q) throws SQLException {
-        return ResponseEntity.ok(customerDao.searchByName(q.trim()));
+        return ResponseEntity.ok(customerService.searchByName(q.trim()));
     }
 }

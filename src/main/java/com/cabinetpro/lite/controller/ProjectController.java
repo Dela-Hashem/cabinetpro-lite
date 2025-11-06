@@ -1,8 +1,9 @@
 package com.cabinetpro.lite.controller;
 
-import com.cabinetpro.lite.dao.ProjectDao;
+import com.cabinetpro.lite.dto.CreateWithProjectRequestDto;
 import com.cabinetpro.lite.dto.ProjectCreateRequestDto;
 import com.cabinetpro.lite.model.Project;
+import com.cabinetpro.lite.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,26 +16,24 @@ import java.util.List;
 @RequestMapping("/api/projects")
 public class ProjectController {
 
-    private final ProjectDao projectDao;
+    private final ProjectService projectService;
 
-    public ProjectController(ProjectDao projectDao) {
-        this.projectDao = projectDao;
+    public ProjectController(ProjectService projectService) {
+        this.projectService = projectService;
     }
 
-    @PostMapping
-    public ResponseEntity<Long> create(@Valid @RequestBody ProjectCreateRequestDto req) throws SQLException {
-        Long id = projectDao.create(new Project(
-                null,
-                req.getCustomerId(),
-                req.getTitle(),
-                req.getAddress(),
-                null
-        ));
+    @PostMapping public ResponseEntity<Long> create(@Valid @RequestBody ProjectCreateRequestDto body) throws SQLException {
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.create(body));
+    }
+
+    @GetMapping("/by-customer/{id}")
+    public List<Project> list(@PathVariable Long id) throws SQLException {
+        return projectService.findByCustomer(id);
+    }
+
+    @PostMapping("/with-project")
+    public ResponseEntity<Long> createWithProject(@Valid @RequestBody CreateWithProjectRequestDto body) throws SQLException {
+        Long id = projectService.createCustomerWithFirstProject(body.getCustomer(), body.getProject());
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
-    }
-
-    @GetMapping("/by-customer/{customerId}")
-    public ResponseEntity<List<Project>> byCustomer(@PathVariable Long customerId) throws SQLException {
-        return ResponseEntity.ok(projectDao.findByCustomerId(customerId));
     }
 }
