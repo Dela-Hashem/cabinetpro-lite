@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -51,28 +52,34 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     @Transactional
     public InvoiceDto generateForProject(Long projectId, InvoiceGenerateRequestDto req) throws SQLException {
-        double gstRate = (req != null && req.getGstRate() != null) ? req.getGstRate() : 0.10;
+        // نرخ GST: BigDecimal واقعی، نه double
+        BigDecimal gstRate = (req != null && req.getGstRate() != null)
+                ? req.getGstRate()
+                : new BigDecimal("0.10"); // از String استفاده کن تا دقت حفظ شود
 
-        List<Material> materials = materialDao.findByProjectId(projectId);
+        var materials = materialDao.findByProjectId(projectId);
         if (materials.isEmpty()) {
             throw new IllegalStateException("No materials for this project");
         }
 
-        double subtotal = round2(materials.stream()
-                .mapToDouble(m -> m.getQty().multiply(m.getUnitPrice()).doubleValue())
-                .sum());
-        double gst = round2(subtotal * gstRate);
-        double total = round2(subtotal + gst);
+        // subtotal = Σ (qty * unitPrice)  ← همه BigDecimal
+        BigDecimal subtotal = materials.stream()
+                .map(m -> m.getQty().multiply(m.getUnitPrice()))   // BigDecimal × BigDecimal
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal gst   = subtotal.multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(gst).setScale(2, RoundingMode.HALF_UP);
 
         Long id = invoiceDao.create(new Invoice(
-                null, projectId, BigDecimal.valueOf(subtotal), BigDecimal.valueOf(gst), BigDecimal.valueOf(total), "DRAFT", null
+                null, projectId, subtotal, gst, total, "DRAFT", null
         ));
 
         return new InvoiceDto(id, subtotal, gst, total, "DRAFT");
     }
 
-    private double round2(double v) {
-        return Math.round(v * 100.0) / 100.0;
+    private BigDecimal round2(BigDecimal v) {
+        return v.multiply(BigDecimal.valueOf(100.0)).divide(BigDecimal.valueOf(100.0));
     }
 
     @Override
