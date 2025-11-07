@@ -1,3 +1,12 @@
+## Quick Start (Docker)
+
+**Prereqs:** Java 21, Maven, Docker
+
+```bash
+mvn clean package -DskipTests
+docker compose up --build
+curl -i http://localhost:8080/api/db/pool-ping
+
 # CabinetPro-Lite 🛠️  
 *A Spring Boot + PostgreSQL backend project built as part of my Java Foundations Professional Certificate.*
 

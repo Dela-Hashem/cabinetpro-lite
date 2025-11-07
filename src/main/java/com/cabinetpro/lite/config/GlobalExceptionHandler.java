@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @ControllerAdvice
@@ -106,6 +107,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(body);
     }
+
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponseDto> handleBadJson(
             org.springframework.http.converter.HttpMessageNotReadableException ex,
@@ -123,6 +125,7 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(body);
     }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleOther(
             Exception ex, HttpServletRequest req) {

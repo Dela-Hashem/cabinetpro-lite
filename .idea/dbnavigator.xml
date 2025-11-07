@@ -6,7 +6,7 @@
   </component>
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DatabaseAssistantManager">
@@ -31,13 +31,19 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="f97dd8a2-43f1-49ad-a42e-4a39c577a53b" object-ref="schemas/public/tables/customers" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="f97dd8a2-43f1-49ad-a42e-4a39c577a53b" />
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
-    <filter-actions connection-id="f97dd8a2-43f1-49ad-a42e-4a39c577a53b" dataset="public.customers" active-filter-id="" />
+    <filter-actions connection-id="f97dd8a2-43f1-49ad-a42e-4a39c577a53b" dataset="public.customers" active-filter-id="EMPTY_FILTER">
+      <filter id="c2f4b3d7-f287-4737-b27d-589b19f35569" name="Filter" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="id" operator="=" value="" active="true" />
+      </filter>
+    </filter-actions>
   </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />
@@ -51,7 +57,7 @@
           <description value="" />
           <database-type value="POSTGRES" />
           <config-type value="BASIC" />
-          <database-version value="15.14" />
+          <database-version value="16.1" />
           <driver-source value="BUNDLED" />
           <driver-library value="" />
           <driver value="" />
