@@ -1,9 +1,12 @@
 package com.cabinetpro.lite.controller;
 
+import com.cabinetpro.lite.dto.InvoiceDto;
+import com.cabinetpro.lite.dto.InvoiceGenerateRequestDto;
 import com.cabinetpro.lite.dto.InvoiceUpdateRequestDto;
 import com.cabinetpro.lite.model.Invoice;
 import com.cabinetpro.lite.service.InvoiceService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +36,10 @@ public class InvoiceController {
 
     // تولید فاکتور از مواد پروژه
     @PostMapping("/from-project/{projectId}")
-    public ResponseEntity<Long> createFromProject(@PathVariable Long projectId) throws SQLException {
-        return ResponseEntity.ok(invoiceService.createFromProject(projectId));
+    public ResponseEntity<Long> generateForProject(@PathVariable Long projectId,
+                                                   @Valid @RequestBody(required = false) InvoiceGenerateRequestDto req) throws SQLException {
+        InvoiceDto dto = invoiceService.generateForProject(projectId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto.getId());
     }
 
     @PutMapping("/{id}")

@@ -4,6 +4,8 @@ package com.cabinetpro.lite.service.impl;
 import com.cabinetpro.lite.dao.InvoiceDao;
 import com.cabinetpro.lite.dao.MaterialDao;
 import com.cabinetpro.lite.dao.ProjectDao;
+import com.cabinetpro.lite.dto.InvoiceDto;
+import com.cabinetpro.lite.dto.InvoiceGenerateRequestDto;
 import com.cabinetpro.lite.model.Invoice;
 import com.cabinetpro.lite.model.Material;
 import com.cabinetpro.lite.service.InvoiceService;
@@ -23,7 +25,9 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final ProjectDao projectDao;
 
     public InvoiceServiceImpl(InvoiceDao invoiceDao, MaterialDao materialDao, ProjectDao projectDao) {
-        this.invoiceDao = invoiceDao; this.materialDao = materialDao; this.projectDao = projectDao;
+        this.invoiceDao = invoiceDao;
+        this.materialDao = materialDao;
+        this.projectDao = projectDao;
     }
 
     private void assertProject(Long projectId) throws SQLException {
@@ -33,54 +37,73 @@ public class InvoiceServiceImpl implements InvoiceService {
 
     @Override
     public List<Invoice> listByProject(Long projectId) {
-        try { assertProject(projectId); return invoiceDao.findByProjectId(projectId); }
-        catch (SQLException e) { throw new RuntimeException(e); }
-    }
-
-    /** subtotal = Σ qty*unitPrice; gst=10%; total=subtotal+gst */
-    @Override @Transactional
-    public Long createFromProject(Long projectId) {
         try {
             assertProject(projectId);
-            List<Material> mats = materialDao.findByProjectId(projectId);
-
-            BigDecimal subtotal = mats.stream()
-                    .map(m -> m.getQty().multiply(m.getUnitPrice()))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .setScale(2, BigDecimal.ROUND_HALF_UP);
-
-            BigDecimal gst = subtotal.multiply(new BigDecimal("0.10")).setScale(2, BigDecimal.ROUND_HALF_UP);
-            BigDecimal total = subtotal.add(gst).setScale(2, BigDecimal.ROUND_HALF_UP);
-
-            Invoice v = new Invoice();
-            v.setProjectId(projectId);
-            v.setSubtotal(subtotal);
-            v.setGst(gst);
-            v.setTotal(total);
-            v.setStatus("DRAFT");
-            return invoiceDao.create(v);
-        } catch (SQLException e) { throw new RuntimeException(e); }
+            return invoiceDao.findByProjectId(projectId);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    @Override @Transactional
+    /**
+     * subtotal = Σ qty*unitPrice; gst=10%; total=subtotal+gst
+     */
+    @Override
+    @Transactional
+    public InvoiceDto generateForProject(Long projectId, InvoiceGenerateRequestDto req) throws SQLException {
+        double gstRate = (req != null && req.getGstRate() != null) ? req.getGstRate() : 0.10;
+
+        List<Material> materials = materialDao.findByProjectId(projectId);
+        if (materials.isEmpty()) {
+            throw new IllegalStateException("No materials for this project");
+        }
+
+        double subtotal = round2(materials.stream()
+                .mapToDouble(m -> m.getQty().multiply(m.getUnitPrice()).doubleValue())
+                .sum());
+        double gst = round2(subtotal * gstRate);
+        double total = round2(subtotal + gst);
+
+        Long id = invoiceDao.create(new Invoice(
+                null, projectId, BigDecimal.valueOf(subtotal), BigDecimal.valueOf(gst), BigDecimal.valueOf(total), "DRAFT", null
+        ));
+
+        return new InvoiceDto(id, subtotal, gst, total, "DRAFT");
+    }
+
+    private double round2(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
+    @Override
+    @Transactional
     public boolean update(Invoice v) {
         try {
             if (v.getId() == null) throw new IllegalArgumentException("id required");
             if (v.getSubtotal().signum() < 0 || v.getGst().signum() < 0 || v.getTotal().signum() < 0)
                 throw new IllegalArgumentException("money must be >= 0");
             return invoiceDao.update(v);
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    @Override @Transactional
+    @Override
+    @Transactional
     public boolean delete(Long id) {
-        try { return invoiceDao.deleteById(id); }
-        catch (SQLException e) { throw new RuntimeException(e); }
+        try {
+            return invoiceDao.deleteById(id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Optional<Invoice> findById(Long id) {
-        try { return invoiceDao.findById(id); }
-        catch (SQLException e) { throw new RuntimeException(e); }
+        try {
+            return invoiceDao.findById(id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
