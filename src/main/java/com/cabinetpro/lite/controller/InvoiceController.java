@@ -22,10 +22,10 @@ public class InvoiceController {
     private final InvoiceService invoiceService;
     public InvoiceController(InvoiceService invoiceService) { this.invoiceService = invoiceService; }
 
-    @GetMapping("/by-project/{projectId}")
-    public ResponseEntity<List<Invoice>> listByProject(@PathVariable Long projectId) throws SQLException {
-        return ResponseEntity.ok(invoiceService.listByProject(projectId));
-    }
+//    @GetMapping("/by-project/{projectId}")
+//    public ResponseEntity<List<Invoice>> listByProject(@PathVariable Long projectId) throws SQLException {
+//        return ResponseEntity.ok(invoiceService.listByProject(projectId));
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Invoice> getById(@PathVariable Long id) throws SQLException {
@@ -58,4 +58,27 @@ public class InvoiceController {
     public ResponseEntity<Boolean> delete(@PathVariable Long id) throws SQLException {
         return ResponseEntity.ok(invoiceService.delete(id));
     }
+
+    @GetMapping("/by-project/{projectId}")
+    public List<Invoice> byProject(@PathVariable Long projectId) throws SQLException {
+        return invoiceService.listByProject(projectId);
+    }
+
+    @PostMapping("/{id}/issue")
+    public ResponseEntity<InvoiceDto> issue(@PathVariable Long id) throws SQLException {
+        return ResponseEntity.ok(invoiceService.issue(id));
+    }
+
+    @PostMapping("/{id}/paid")
+    public ResponseEntity<Void> markPaid(@PathVariable Long id) throws SQLException {
+        return invoiceService.markPaid(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/{id}/void")
+    public ResponseEntity<Void> voidInv(@PathVariable Long id) throws SQLException {
+        return invoiceService.voidInvoice(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+
+
 }

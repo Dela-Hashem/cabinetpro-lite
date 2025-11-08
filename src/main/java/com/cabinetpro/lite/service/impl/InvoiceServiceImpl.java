@@ -2,12 +2,12 @@
 package com.cabinetpro.lite.service.impl;
 
 import com.cabinetpro.lite.dao.InvoiceDao;
+import com.cabinetpro.lite.dao.InvoiceNumberDao;
 import com.cabinetpro.lite.dao.MaterialDao;
 import com.cabinetpro.lite.dao.ProjectDao;
 import com.cabinetpro.lite.dto.InvoiceDto;
 import com.cabinetpro.lite.dto.InvoiceGenerateRequestDto;
 import com.cabinetpro.lite.model.Invoice;
-import com.cabinetpro.lite.model.Material;
 import com.cabinetpro.lite.service.InvoiceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,11 +25,13 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceDao invoiceDao;
     private final MaterialDao materialDao;
     private final ProjectDao projectDao;
+    private final InvoiceNumberDao numberDao;
 
-    public InvoiceServiceImpl(InvoiceDao invoiceDao, MaterialDao materialDao, ProjectDao projectDao) {
+    public InvoiceServiceImpl(InvoiceDao invoiceDao, MaterialDao materialDao, ProjectDao projectDao, InvoiceNumberDao numberDao) {
         this.invoiceDao = invoiceDao;
         this.materialDao = materialDao;
         this.projectDao = projectDao;
+        this.numberDao = numberDao;
     }
 
     private void assertProject(Long projectId) throws SQLException {
@@ -68,12 +71,14 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        BigDecimal gst   = subtotal.multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gst = subtotal.multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = subtotal.add(gst).setScale(2, RoundingMode.HALF_UP);
 
         Long id = invoiceDao.create(new Invoice(
-                null, projectId, subtotal, gst, total, "DRAFT", null
-        ));
+                null, projectId, subtotal, gst, total, "DRAFT", null,
+                        String.valueOf(numberDao.nextForYear(java.time.LocalDate.now().getYear()))
+)
+        );
 
         return new InvoiceDto(id, subtotal, gst, total, "DRAFT");
     }
@@ -113,4 +118,38 @@ public class InvoiceServiceImpl implements InvoiceService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    @Transactional
+    public InvoiceDto issue(Long id) throws SQLException {
+        Invoice inv = invoiceDao.findById(id).orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
+        if (!"DRAFT".equals(inv.getStatus())) throw new IllegalStateException("Only DRAFT can be issued");
+
+        int year = java.time.LocalDate.now().getYear();
+        long seq = numberDao.nextForYear(year);
+        String number = String.format("INV-%d-%05d", year, seq); // e.g., INV-2025-00012
+
+        Instant now = Instant.now();
+        boolean ok = invoiceDao.assignNumberAndIssue(id, number, now);
+        if (!ok) throw new IllegalStateException("Issue failed");
+
+        // برگرداندن وضعیت نهایی
+        Invoice issued = invoiceDao.findById(id).orElseThrow();
+        return new InvoiceDto(issued.getId(), issued.getSubtotal(), issued.getGst(), issued.getTotal(), issued.getStatus());
+    }
+
+    @Override
+    @Transactional
+    public boolean markPaid(Long id) throws SQLException {
+        // فقط روی ISSUED منطقی‌ست، ولی اگر خواستی constraint نرم بگذار
+        return invoiceDao.updateStatus(id, "PAID");
+    }
+
+    @Override
+    @Transactional
+    public boolean voidInvoice(Long id) throws SQLException {
+        return invoiceDao.updateStatus(id, "VOID");
+    }
 }
+
+

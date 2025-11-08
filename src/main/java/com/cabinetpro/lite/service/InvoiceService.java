@@ -13,4 +13,9 @@ public interface InvoiceService {
     boolean update(Invoice v);
     boolean delete(Long id);
     Optional<Invoice> findById(Long id);
+
+
+    InvoiceDto issue(Long id) throws SQLException;       // شماره + issued_at + status=ISSUED
+    boolean markPaid(Long id) throws SQLException;       // status=PAID
+    boolean voidInvoice(Long id) throws SQLException;    // status=VOID
 }

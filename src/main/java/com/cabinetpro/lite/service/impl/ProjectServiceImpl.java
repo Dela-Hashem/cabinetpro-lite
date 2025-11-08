@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -23,7 +24,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final CustomerDao customerDao;
 
     public ProjectServiceImpl(ProjectDao projectDao, CustomerDao customerDao) {
-        this.projectDao = projectDao; this.customerDao = customerDao;
+        this.projectDao = projectDao;
+        this.customerDao = customerDao;
     }
 
     @Override
@@ -45,4 +47,14 @@ public class ProjectServiceImpl implements ProjectService {
         projectDao.create(new Project(null, customerId, projReq.getTitle(), projReq.getAddress(), null));
         return customerId;
     }
+
+    @Override
+    public Optional<Project> findById(Long id) {
+        try {
+            return projectDao.findById(id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

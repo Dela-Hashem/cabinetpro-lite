@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.Instant;
 import java.util.*;
 @Repository
 public class InvoiceDaoJdbc implements InvoiceDao {
@@ -105,6 +106,30 @@ public class InvoiceDaoJdbc implements InvoiceDao {
         }
     }
 
+
+    @Override
+    public boolean updateStatus(Long id, String status) throws SQLException {
+        String sql = "UPDATE invoices SET status=? WHERE id=?";
+        var c = DataSourceUtils.getConnection(ds);
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setLong(2, id);
+            return ps.executeUpdate() > 0;
+        } finally { DataSourceUtils.releaseConnection(c, ds); }
+    }
+
+    @Override
+    public boolean assignNumberAndIssue(Long id, String invoiceNumber, Instant issuedAt) throws SQLException {
+        String sql = "UPDATE invoices SET invoice_number=?, issued_at=?, status='ISSUED' WHERE id=? AND status='DRAFT'";
+        var c = DataSourceUtils.getConnection(ds);
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, invoiceNumber);
+            ps.setTimestamp(2, Timestamp.from(issuedAt));
+            ps.setLong(3, id);
+            return ps.executeUpdate() > 0;
+        } finally { DataSourceUtils.releaseConnection(c, ds); }
+    }
+
     private Invoice map(ResultSet rs) throws SQLException {
         Invoice v = new Invoice();
         v.setId(rs.getLong("id"));
@@ -117,4 +142,5 @@ public class InvoiceDaoJdbc implements InvoiceDao {
         v.setIssuedAt(ts != null ? ts.toInstant() : null);
         return v;
     }
+
 }

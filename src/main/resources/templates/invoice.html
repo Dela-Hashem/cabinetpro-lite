@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tax invoice</title>
+    <style type="text/css">
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h1 { font-size: 18px; margin: 0 0 6px 0; }
+        .muted { color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        tfoot td { font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>Tax invoice</h1>
+<div class="muted">ABN: <span th:text="${company.abn}">ABN</span></div>
+<div>Invoice No: <span th:text="${invoice.number}">INV</span></div>
+<div>Date: <span th:text="${invoice.date}">2025-01-01</span></div>
+<div>Customer: <span th:text="${customer.name}">Name</span></div>
+<div>Project: <span th:text="${project.title}">Project</span></div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Description</th><th>Qty</th><th>Unit</th><th>Line</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="line : ${lines}">
+        <td th:text="${line.description}">Item</td>
+        <td th:text="${line.qty}">1.000</td>
+        <td th:text="${line.unit}">0.00</td>
+        <td th:text="${line.line}">0.00</td>
+    </tr>
+    </tbody>
+    <tfoot>
+    <tr><td colspan="3">Subtotal (ex GST)</td><td th:text="${totals.subtotal}">0.00</td></tr>
+    <tr><td colspan="3">GST (10%)</td><td th:text="${totals.gst}">0.00</td></tr>
+    <tr><td colspan="3">Total (inc GST)</td><td th:text="${totals.total}">0.00</td></tr>
+    </tfoot>
+</table>
+
+<p class="muted">
+    Payment terms: 7 days. BSB/ACC:
+    <span th:text="${company.bsb}">000-000</span> /
+    <span th:text="${company.acc}">00000000</span>
+</p>
+</body>
+</html>

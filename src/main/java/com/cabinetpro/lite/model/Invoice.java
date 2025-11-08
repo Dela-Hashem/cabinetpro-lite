@@ -18,7 +18,8 @@ public class Invoice {
     private BigDecimal subtotal;
     private BigDecimal gst;
     private BigDecimal total;
-    private String status; // DRAFT, SENT, PAID, ...
-    private Instant issuedAt;
+    private String status;         // DRAFT/ISSUED/PAID/VOID
+    private Instant issuedAt;      // nullable تا قبل از ISSUED
+    private String invoiceNumber;  // nullable تا قبل از ISSUED
 
 }
