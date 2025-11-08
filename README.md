@@ -1,142 +1,136 @@
-## Quick Start (Docker)
+# CabinetPro-Lite 🧰
 
-**Prereqs:** Java 21, Maven, Docker
+**Lean backend for cabinet-making operations — built with Java 21 + Spring Boot 3 + PostgreSQL + Docker.**
+
+A practical backend that tracks customers, projects, materials, tasks, and invoices.
+Designed for real cabinet workflows — quoting, invoicing, and project management.
+
+---
+
+## ⚙️ Tech Stack
+
+| Layer        | Technology                        |
+| ------------ | --------------------------------- |
+| Language     | Java 21                           |
+| Framework    | Spring Boot 3.x                   |
+| Build        | Maven                             |
+| Database     | PostgreSQL (Dockerized)           |
+| Connection   | JDBC + `DataSourceUtils` (no JPA) |
+| Transactions | `@Transactional` in Service layer |
+| Tests        | JUnit 5 + Testcontainers          |
+| PDF Engine   | Thymeleaf + openhtmltopdf         |
+| Packaging    | Docker + docker-compose           |
+| REST Docs    | Postman Collection included       |
+
+---
+
+## 🧱 Architecture
+
+```
+controller → service → dao(jdbc) → db
+```
+
+* **Controller**: thin REST endpoints (`ResponseEntity<>`)
+* **Service**: business logic, transaction boundaries
+* **DAO**: plain JDBC via `DataSourceUtils`
+* **DTO/model**: request + response isolation
+
+Example:
+
+```
+CustomerController
+ └── CustomerService
+      └── CustomerDaoJdbc
+```
+
+---
+
+## 📦 Modules / Entities
+
+* **Customer** – name, phone, email
+* **Project** – customer_id, title, address, status
+* **Material** – project_id, name, qty, unit_price
+* **TaskItem** – project_id, title, done
+* **Invoice** – subtotal, gst, total, status, issued_at
+
+---
+
+## 📾 Invoices
+
+* Generates totals from materials (`qty × unit_price`)
+* Applies Australian GST 10 %
+* Produces printable PDF via Thymeleaf template (`invoice.html`)
+* Endpoint:
+
+  ```
+  GET /api/invoices/{id}/pdf   → application/pdf
+  ```
+
+---
+
+## 🐳 Docker Setup
+
+```bash
+docker-compose up --build
+```
+
+Services:
+
+* `app` → Spring Boot (port 8080)
+* `db`  → PostgreSQL (port 5432)
+
+Default credentials:
+
+```yaml
+POSTGRES_DB: cabinetpro
+POSTGRES_USER: cabinetuser
+POSTGRES_PASSWORD: cabinetpass
+```
+
+---
+
+## 🧪 Local Testing
+
+Import the Postman collection:
+`CabinetPro-Lite.postman_collection.json`
+
+Example flow:
+
+1. Create customer → `/api/customers`
+2. Create project → `/api/projects`
+3. Add materials → `/api/projects/{id}/materials`
+4. Generate invoice → `/api/projects/{id}/invoices`
+5. Download PDF → `/api/invoices/{id}/pdf`
+
+---
+
+## 📄 SQL Schema
+
+Full schema in `/db/init.sql`
+Executed automatically by Docker at first boot.
+
+---
+
+## 🧬 Build & Run manually
 
 ```bash
 mvn clean package -DskipTests
-docker compose up --build
-curl -i http://localhost:8080/api/db/pool-ping
-
-# CabinetPro-Lite 🛠️  
-*A Spring Boot + PostgreSQL backend project built as part of my Java Foundations Professional Certificate.*
-
----
-
-## 🎯 Overview
-**CabinetPro-Lite** is a backend project developed to demonstrate **clean architecture**, **transactional service design**, and the **DAO pattern** using **Spring Boot 3** and **PostgreSQL**.
-
-It’s inspired by real cabinet-making workflows — managing **customers** and their **projects** in a structured, atomic, and scalable way.
-
-This project was created as part of my learning journey for the **Java Foundations Professional Certificate (JetBrains Academy)** — applying the fundamentals of Java, JDBC, and enterprise-grade backend development.
-
----
-
-## 🧱 Tech Stack
-| Layer | Technology | Purpose |
-|--------|-------------|----------|
-| Backend | **Java 17**, **Spring Boot 3.2** | Core business logic, REST API |
-| Database | **PostgreSQL (Dockerized)** | Data persistence |
-| Data Access | **Pure JDBC + DAO pattern** | Manual SQL control (no JPA) |
-| Transactions | **Spring @Transactional** | Managed at the Service layer |
-| Testing | **Postman / MockMvc / Testcontainers** | API and integration testing |
-
----
-
-## 🧩 Architecture
-```
-com.cabinetpro.lite
- ├─ controller/    → REST endpoints
- ├─ service/       → Business logic + @Transactional
- ├─ dao/           → Direct database access via JDBC
- ├─ model/         → Entities (Customer, Project)
- ├─ dto/           → Data Transfer Objects
- ├─ config/        → (Optional) DB configuration or connection utilities
- └─ CabinetProLiteApplication.java
+java -jar target/cabinetpro-lite-1.0.0.jar
 ```
 
 ---
 
-### **Key Concept**  
-All transactions are handled at the **service layer** for atomic consistency,  
-while DAO classes manage raw SQL operations with `DataSourceUtils`.
+## 🚀 Next Steps (Roadmap)
 
----
-
-## 🚀 Setup & Run
-
-### Prerequisites
-- **Java 17+**
-- **Maven 3.8+**
-- **Docker Desktop** (for PostgreSQL)
-
-### Steps
-```bash
-# 1️⃣ Clone the project
-git clone https://github.com/Dela-Hashem/cabinetpro-lite.git
-cd cabinetpro-lite
-
-# 2️⃣ Run PostgreSQL with Docker
-docker run --name cabinetpro_db   -e POSTGRES_USER=cabinetuser   -e POSTGRES_PASSWORD=cabinetpass   -e POSTGRES_DB=cabinetpro   -p 5432:5432 -d postgres:16
-
-# 3️⃣ Build & Run the app
-mvn clean spring-boot:run
-```
-
-Then open your browser:  
-👉 **http://localhost:8080**
-
----
-
-## 📬 REST API Examples
-
-### ➕ Create Customer
-**POST** `/api/customers`
-```json
-{
-  "fullName": "Maryam A.",
-  "phone": "0400 555 123",
-  "email": "maryam@example.com"
-}
-```
-
-### ➕ Create Customer with First Project (atomic transaction)
-**POST** `/api/customers/with-project`
-```json
-{
-  "customer": {
-    "fullName": "Zac H.",
-    "phone": "0400 111 222",
-    "email": "zac@example.com"
-  },
-  "project": {
-    "title": "Laundry Fitout",
-    "address": "Nollamara WA"
-  }
-}
-```
-
-### 🔍 Search Customers
-**GET** `/api/customers/search?q=mary`
-
-### 📋 List Projects by Customer
-**GET** `/api/projects/by-customer/{customerId}`
-
----
-
-## 📘 Educational Context
-This project was built as a **practical component** of my  
-🎓 *Java Foundations Professional Certificate (JetBrains Academy)*  
-to apply:
-- Object-oriented design principles  
-- JDBC connections and connection pooling (HikariCP)  
-- Service–DAO separation  
-- Transaction management with Spring  
-- Real-world CRUD operations  
+* [ ] Persist invoice PDF path to disk
+* [ ] Add authentication (API key / JWT)
+* [ ] Implement search + pagination
+* [ ] Integrate metrics (Micrometer + Prometheus)
+* [ ] Simple React front-end
 
 ---
 
 ## 🧑‍💻 Author
-**Dela Hashem**  
-📍 Perth, Western Australia  
-🔗 [GitHub Profile](https://github.com/Dela-Hashem)
 
----
-
-## 🏁 Future Enhancements
-- Add authentication & role-based access control  
-- Integrate React frontend (for full-stack version)  
-- Add Docker Compose for full environment deployment  
-
----
-
-⭐ **If you like this project, consider starring it on GitHub — it supports my certification journey and helps others discover it.**
+**Dela Hashemi** — Software developer, Perth WA
+Practical builder of both software and cabinetry.
